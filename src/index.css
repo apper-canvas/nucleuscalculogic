@@ -116,6 +116,26 @@
   @apply bg-red-500 text-white font-bold;
 }
 
+.calculator-scientific {
+  @apply bg-accent/80 text-white font-semibold;
+}
+
+.calculator-memory {
+  @apply bg-orange-500 text-white font-semibold;
+}
+
+.calculator-constant {
+  @apply bg-purple-500 text-white font-semibold;
+}
+
+.calculator-trig {
+  @apply bg-indigo-500 text-white font-semibold;
+}
+
+.calculator-mode-switch {
+  @apply bg-primary text-white font-bold;
+}
+
 .calculator-display {
   @apply bg-white dark:bg-surface-800 rounded-xl shadow-inner p-4 text-right overflow-hidden;
   @apply border border-surface-200 dark:border-surface-700;

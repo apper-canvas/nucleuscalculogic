@@ -16,7 +16,8 @@
     "framer-motion": "^10.16.4",
     "lucide-react": "^0.344.0",
     "@reduxjs/toolkit": "2.7.0",
-    "react-redux": "^9.2.0"
+    "react-redux": "^9.2.0",
+    "mathjs": "^11.8.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",
