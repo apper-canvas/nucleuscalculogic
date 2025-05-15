@@ -157,9 +157,18 @@ const MainFeature = () => {
         case 'ln':
           result = Math.log(inputValue);
           calculationDisplay = `ln(${inputValue}) = ${result}`;
+          break;
       default:
         return secondValue;
     }
+      
+      setDisplayValue(String(result));
+      setWaitingForOperand(true);
+      addToHistory(calculationDisplay, result);
+    } catch (error) {
+      toast.error(`Error: ${error.message}`);
+      setDisplayValue('Error');
+      setWaitingForOperand(true);
   };
 
   const handleEquals = () => {
