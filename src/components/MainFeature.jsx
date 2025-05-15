@@ -158,8 +158,9 @@ const MainFeature = () => {
           result = Math.log(inputValue);
           calculationDisplay = `ln(${inputValue}) = ${result}`;
           break;
-      default:
-        return secondValue;
+          break;
+          return;
+      }
     }
       
       setDisplayValue(String(result));
@@ -834,7 +835,9 @@ const MainFeature = () => {
   );
 };
 
-// History Panel Component
+export default MainFeature;
+
+// History Panel Component - Moved outside MainFeature to be a top-level component
 // Moved outside MainFeature to make it a top-level component
 const HistoryPanel = ({ history, clearHistory, recallFromHistory, TrashIcon, ClockIcon }) => {
   const formatTime = (isoString) => { 
@@ -889,6 +892,5 @@ const HistoryPanel = ({ history, clearHistory, recallFromHistory, TrashIcon, Clo
         )}
       </div>
     </>
-  ); 
+  );
 };
-export default MainFeature;
