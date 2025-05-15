@@ -172,6 +172,22 @@ const MainFeature = () => {
   };
 
   const handleEquals = () => {
+    if (!operation || previousValue === null) return;
+    
+    const inputValue = parseFloat(displayValue);
+    const result = calculateOperation(previousValue, inputValue, operation);
+    
+    // Format for displaying in history
+    const calculation = `${previousValue} ${operation} ${inputValue} = ${result}`;
+    
+    setDisplayValue(String(result));
+    setPreviousValue(null);
+    setOperation(null);
+    setWaitingForOperand(true);
+    
+    addToHistory(calculation, result);
+  };
+
   const performTrigOperation = (operation) => {
     const inputValue = parseFloat(displayValue);
     let result;
@@ -257,21 +273,6 @@ const MainFeature = () => {
       toast.error(`Error: ${error.message}`);
       setDisplayValue('Error');
     }
-  };
-    if (!operation || previousValue === null) return;
-    
-    const inputValue = parseFloat(displayValue);
-    const result = calculateOperation(previousValue, inputValue, operation);
-    
-    // Format for displaying in history
-    const calculation = `${previousValue} ${operation} ${inputValue} = ${result}`;
-    
-    setDisplayValue(String(result));
-    setPreviousValue(null);
-    setOperation(null);
-    setWaitingForOperand(true);
-    
-    addToHistory(calculation, result);
   };
   
   // Memory functions
