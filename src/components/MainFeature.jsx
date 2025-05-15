@@ -52,7 +52,15 @@ const MainFeature = () => {
     }
   }, []);
 
-  // Load memory value from localStorage
+  // Load memory value from localStorage again
+  useEffect(() => {
+    const savedMemory = localStorage.getItem('calcMemory');
+    if (savedMemory) {
+      setMemoryValue(parseFloat(savedMemory));
+    }
+  }, []);
+
+  const clearDisplay = () => {
     setDisplayValue('0');
     setPreviousValue(null);
     setOperation(null);
