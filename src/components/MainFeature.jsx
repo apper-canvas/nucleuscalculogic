@@ -51,6 +51,14 @@ const MainFeature = () => {
       setMemoryValue(parseFloat(savedMemory));
     }
   }, []);
+
+  // Load memory value from localStorage
+  useEffect(() => {
+    const savedMemory = localStorage.getItem('calcMemory');
+    if (savedMemory) {
+      setMemoryValue(parseFloat(savedMemory));
+    }
+  }, []);
   const clearDisplay = () => {
     setDisplayValue('0');
     setPreviousValue(null);
@@ -279,6 +287,40 @@ const MainFeature = () => {
     const currentValue = parseFloat(displayValue);
     
     switch (operation) {
+      case 'MS':
+        setMemoryValue(currentValue);
+        localStorage.setItem('calcMemory', currentValue);
+        toast.info(`Stored ${currentValue} in memory`);
+        break;
+      case 'M+':
+        setMemoryValue(memoryValue + currentValue);
+        localStorage.setItem('calcMemory', memoryValue + currentValue);
+        toast.info(`Added ${currentValue} to memory`);
+        break;
+      case 'M-':
+        setMemoryValue(memoryValue - currentValue);
+        localStorage.setItem('calcMemory', memoryValue - currentValue);
+        toast.info(`Subtracted ${currentValue} from memory`);
+        break;
+      case 'MR':
+        setDisplayValue(String(memoryValue));
+        setWaitingForOperand(true);
+        toast.info(`Recalled memory value: ${memoryValue}`);
+        break;
+      case 'MC':
+        setMemoryValue(0);
+        localStorage.setItem('calcMemory', 0);
+        toast.info('Memory cleared');
+        break;
+      default:
+        return;
+    }
+  };
+  // Memory functions
+  const handleMemoryOperation = (operation) => {
+    const currentValue = parseFloat(displayValue);
+    
+    switch (operation) {
       case 'M+':
         setMemoryValue(memoryValue + currentValue);
         localStorage.setItem('calcMemory', memoryValue + currentValue);
@@ -492,12 +534,12 @@ const MainFeature = () => {
         onClick={() => performTrigOperation('log2')}
         className="calculator-button calculator-scientific"
       >
-        log₂
+        onClick={() => handleMemoryOperation('MR')}
       </button>
       <button
         onClick={() => handleMemoryOperation('MR')}
         className="calculator-button calculator-memory"
-      >
+      <button
         MR
       </button>
       <button
@@ -645,6 +687,39 @@ const MainFeature = () => {
         className="calculator-button calculator-action"
       >
         CE
+      </button>
+      
+      {/* Memory buttons row */}
+      <button
+        onClick={() => handleMemoryOperation('MC')}
+        className="calculator-button calculator-memory"
+      >
+        MC
+      </button>
+      <button
+        onClick={() => handleMemoryOperation('MR')}
+        className="calculator-button calculator-memory"
+      >
+        MR
+      </button>
+      <button
+        onClick={() => handleMemoryOperation('MS')}
+        className="calculator-button calculator-memory"
+      >
+        MS
+      </button>
+      <button
+        onClick={() => handleMemoryOperation('M+')}
+        className="calculator-button calculator-memory"
+      >
+        M+
+      </button>
+      
+      <button
+        onClick={() => handleMemoryOperation('M-')}
+        className="calculator-button calculator-memory col-span-4"
+      >
+        M-
       </button>
       
       {/* Row 2 */}
