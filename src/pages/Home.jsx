@@ -20,7 +20,7 @@ const Home = ({ darkMode }) => {
           >
             <CalculatorIcon className="w-7 h-7 text-primary dark:text-primary-light" />
             <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              CalcuLogic
+              Icalci
             </h1>
           </motion.div>
           
@@ -62,7 +62,7 @@ const Home = ({ darkMode }) => {
       <footer className="bg-surface-100 dark:bg-surface-800 border-t border-surface-200 dark:border-surface-700 py-6">
         <div className="container mx-auto px-4 text-center">
           <p className="text-surface-600 dark:text-surface-400 text-sm">
-            © {new Date().getFullYear()} CalcuLogic. All rights reserved.
+            © {new Date().getFullYear()} Icalci. All rights reserved.
           </p>
         </div>
       </footer>
