@@ -835,7 +835,8 @@ const MainFeature = () => {
 };
 
 // History Panel Component
-function HistoryPanel({ history, clearHistory, recallFromHistory, TrashIcon, ClockIcon }) {
+// Moved outside MainFeature to make it a top-level component
+const HistoryPanel = ({ history, clearHistory, recallFromHistory, TrashIcon, ClockIcon }) => {
   const formatTime = (isoString) => { 
     const date = new Date(isoString);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -889,5 +890,5 @@ function HistoryPanel({ history, clearHistory, recallFromHistory, TrashIcon, Clo
       </div>
     </>
   ); 
-}
+};
 export default MainFeature;
