@@ -835,8 +835,8 @@ const MainFeature = () => {
 };
 
 // History Panel Component
-const HistoryPanel = ({ history, clearHistory, recallFromHistory, TrashIcon, ClockIcon }) => {
-  const formatTime = (isoString) => {
+function HistoryPanel({ history, clearHistory, recallFromHistory, TrashIcon, ClockIcon }) {
+  const formatTime = (isoString) => { 
     const date = new Date(isoString);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
@@ -888,7 +888,6 @@ const HistoryPanel = ({ history, clearHistory, recallFromHistory, TrashIcon, Clo
         )}
       </div>
     </>
-  );
-};
-
+  ); 
+}
 export default MainFeature;
