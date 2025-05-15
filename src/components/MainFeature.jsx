@@ -53,13 +53,6 @@ const MainFeature = () => {
   }, []);
 
   // Load memory value from localStorage
-  useEffect(() => {
-    const savedMemory = localStorage.getItem('calcMemory');
-    if (savedMemory) {
-      setMemoryValue(parseFloat(savedMemory));
-    }
-  }, []);
-  const clearDisplay = () => {
     setDisplayValue('0');
     setPreviousValue(null);
     setOperation(null);
@@ -317,34 +310,6 @@ const MainFeature = () => {
     }
   };
   // Memory functions
-  const handleMemoryOperation = (operation) => {
-    const currentValue = parseFloat(displayValue);
-    
-    switch (operation) {
-      case 'M+':
-        setMemoryValue(memoryValue + currentValue);
-        localStorage.setItem('calcMemory', memoryValue + currentValue);
-        toast.info(`Added ${currentValue} to memory`);
-        break;
-      case 'M-':
-        setMemoryValue(memoryValue - currentValue);
-        localStorage.setItem('calcMemory', memoryValue - currentValue);
-        toast.info(`Subtracted ${currentValue} from memory`);
-        break;
-      case 'MR':
-        setDisplayValue(String(memoryValue));
-        setWaitingForOperand(true);
-        toast.info(`Recalled memory value: ${memoryValue}`);
-        break;
-      case 'MC':
-        setMemoryValue(0);
-        localStorage.setItem('calcMemory', 0);
-        toast.info('Memory cleared');
-        break;
-      default:
-        return;
-    }
-  };
 
   const toggleCalculatorMode = () => {
     setScientificMode(!scientificMode);
@@ -534,14 +499,12 @@ const MainFeature = () => {
         onClick={() => performTrigOperation('log2')}
         className="calculator-button calculator-scientific"
       >
-        onClick={() => handleMemoryOperation('MR')}
+        log₂
       </button>
-      <button
-        onClick={() => handleMemoryOperation('MR')}
+      <button 
+        onClick={() => handleMemoryOperation('MR')} 
         className="calculator-button calculator-memory"
-      <button
-        MR
-      </button>
+      >MR</button>
       <button
         onClick={() => inputDigit(9)}
         className="calculator-button calculator-number"
