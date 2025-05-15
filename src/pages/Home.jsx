@@ -1,11 +1,41 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
+import { useSelector, useDispatch } from 'react-redux';
+
 import MainFeature from '../components/MainFeature';
 import getIcon from '../utils/iconUtils';
+import { AuthContext } from '../App';
+import { getCalculatorSettings, saveCalculatorSettings } from '../services/calculatorSettingsService';
+  const dispatch = useDispatch();
+  const { logout } = useContext(AuthContext);
+  const { user } = useSelector((state) => state.user);
 
 const Home = ({ darkMode }) => {
-  const GitHubIcon = getIcon('Github');
+  const LogOutIcon = getIcon('LogOut');
+
+  const [loading, setLoading] = useState(true);
+
+  // Load user settings from database
+  useEffect(() => {
+    if (user) {
+      const loadSettings = async () => {
+        try {
+          setLoading(true);
+          const settings = await getCalculatorSettings(user.userId);
+          if (settings) {
+            // We pass darkMode directly to the parent component through props
+          }
+        } catch (error) {
+          toast.error("Failed to load user settings");
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadSettings();
+    }
+  }, [user, dispatch]);
+
   const CalculatorIcon = getIcon('Calculator');
   
   return (
@@ -25,11 +55,25 @@ const Home = ({ darkMode }) => {
           </motion.div>
           
           <nav>
-            <a 
-              href="https://github.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="p-2 rounded-full hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
+            {user && (
+              <div className="flex items-center gap-4">
+                <span className="hidden md:block text-sm text-surface-600 dark:text-surface-400">
+                  Hello, {user.firstName || user.emailAddress.split('@')[0]}
+                </span>
+                <button
+                  onClick={logout}
+                  className="p-2 rounded-full hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
+                  aria-label="Logout"
+                  title="Logout"
+                >
+                  <LogOutIcon className="w-5 h-5" />
+                </button>
+                <a 
+                  href="https://github.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="p-2 rounded-full hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
+                  aria-label="GitHub"
               aria-label="GitHub"
             >
               <GitHubIcon className="w-5 h-5" />
@@ -54,7 +98,9 @@ const Home = ({ darkMode }) => {
             </p>
           </motion.div>
           
-          <MainFeature />
+          {loading ? (
+            <div className="text-center p-8">Loading calculator...</div>
+          ) : <MainFeature />}
         </section>
       </main>
 

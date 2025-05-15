@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
+import { useSelector, useDispatch } from 'react-redux';
+import { setDarkMode, setScientificMode } from '../store/calculatorSlice';
 import * as math from 'mathjs';
 import getIcon from '../utils/iconUtils';
 
@@ -24,18 +26,39 @@ const MainFeature = () => {
   const [previousValue, setPreviousValue] = useState(null);
   const [operation, setOperation] = useState(null);
   const [waitingForOperand, setWaitingForOperand] = useState(false);
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState([]); 
   const [showHistory, setShowHistory] = useState(false);
   const [scientificMode, setScientificMode] = useState(false);
   const [memoryValue, setMemoryValue] = useState(0);
   const [degrees, setDegrees] = useState(true); // true for degrees, false for radians
   const [shiftMode, setShiftMode] = useState(false); // for inverse trig functions
+  const [loading, setLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  
+  // Redux
+  const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.user);
+  
+  // Import needed services
+  const { 
+    getCalculationHistory, 
+    saveCalculation, 
+    clearCalculationHistory 
+  } = require('../services/calculationHistoryService');
+  
+  const { 
+    getMemoryValue, 
+    saveMemoryValue 
+  } = require('../services/memoryValueService');
+  
+  const {
+    getCalculatorSettings,
+    saveCalculatorSettings
+  } = require('../services/calculatorSettingsService');
 
-  // Load history from localStorage
   useEffect(() => {
-    const savedHistory = localStorage.getItem('calcHistory');
-    if (savedHistory) {
-      setHistory(JSON.parse(savedHistory));
+    if (user) {
+      loadCalculatorData();
     }
   }, []);
 
@@ -43,21 +66,65 @@ const MainFeature = () => {
   useEffect(() => {
     localStorage.setItem('calcHistory', JSON.stringify(history));
   }, [history]);
-
-  // Load memory value from localStorage
-  useEffect(() => {
-    const savedMemory = localStorage.getItem('calcMemory');
-    if (savedMemory) {
-      setMemoryValue(parseFloat(savedMemory));
+  
+  // Load calculator data from the database
+  const loadCalculatorData = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      
+      // Load calculator settings
+      const settings = await getCalculatorSettings(user.userId);
+      if (settings) {
+        setScientificMode(settings.scientificMode);
+        setDegrees(settings.angleMode === 'degrees');
+        dispatch(setDarkMode(settings.darkMode));
+        dispatch(setScientificMode(settings.scientificMode));
+      }
+      
+      // Load memory value
+      const memory = await getMemoryValue(user.userId);
+      setMemoryValue(memory);
+      
+      // Load calculation history
+      await loadHistory();
+      
+    } catch (error) {
+      console.error("Error loading calculator data:", error);
+      toast.error("Failed to load calculator data");
+    } finally {
+      setLoading(false);
     }
-  }, []);
-
-  // Load memory value from localStorage again
-  useEffect(() => {
-    const savedMemory = localStorage.getItem('calcMemory');
-    if (savedMemory) {
-      setMemoryValue(parseFloat(savedMemory));
+  };
+  
+  // Load calculation history from the database
+  const loadHistory = async () => {
+    if (!user) return;
+    
+    try {
+      setHistoryLoading(true);
+      const historyData = await getCalculationHistory(user.userId);
+      
+      if (historyData && historyData.length > 0) {
+        const formattedHistory = historyData.map(item => ({
+          calculation: item.calculation,
+          result: item.result,
+          timestamp: item.timestamp
+        }));
+        
+        setHistory(formattedHistory);
+      }
+    } catch (error) {
+      console.error("Error loading history:", error);
+      toast.error("Failed to load calculation history");
+    } finally {
+      setHistoryLoading(false);
     }
+  };
+  
+  useEffect(() => {
+    if (user) loadCalculatorData();
   }, []);
 
   const clearDisplay = () => {
@@ -73,9 +140,24 @@ const MainFeature = () => {
     setWaitingForOperand(false);
   };
 
-  const clearHistory = () => {
-    setHistory([]);
-    toast.success("History cleared");
+  const clearHistory = async () => {
+    if (!user) {
+      toast.error("Please log in to clear history");
+      return;
+    }
+    
+    try {
+      setHistoryLoading(true);
+      const success = await clearCalculationHistory(user.userId);
+      if (success) {
+        setHistory([]);
+        toast.success("History cleared");
+      }
+    } catch (error) {
+      toast.error("Failed to clear history");
+    } finally {
+      setHistoryLoading(false);
+    }
   };
 
   const inputDigit = (digit) => {
@@ -172,7 +254,8 @@ const MainFeature = () => {
       setDisplayValue(String(result));
       setWaitingForOperand(true);
       addToHistory(calculationDisplay, result);
-    } catch (error) {
+    } 
+    catch (error) {
       toast.error(`Error: ${error.message}`);
       setDisplayValue('Error');
       setWaitingForOperand(true);
@@ -193,7 +276,7 @@ const MainFeature = () => {
     setOperation(null);
     setWaitingForOperand(true);
     
-    addToHistory(calculation, result);
+    await addToHistory(calculation, result);
   };
 
   const performTrigOperation = (operation) => {
@@ -277,7 +360,8 @@ const MainFeature = () => {
       setDisplayValue(String(result));
       setWaitingForOperand(true);
       addToHistory(calculation, result);
-    } catch (error) {
+    } 
+    catch (error) {
       toast.error(`Error: ${error.message}`);
       setDisplayValue('Error');
     }
@@ -285,23 +369,22 @@ const MainFeature = () => {
   
   // Memory functions
   const handleMemoryOperation = (operation) => {
+    if (!user) {
+      toast.error("Please login to use memory functions");
+      return;
+    }
+    
     const currentValue = parseFloat(displayValue);
     
     switch (operation) {
       case 'MS':
-        setMemoryValue(currentValue);
-        localStorage.setItem('calcMemory', currentValue);
-        toast.info(`Stored ${currentValue} in memory`);
+        saveMemoryToDatabase(currentValue);
         break;
       case 'M+':
-        setMemoryValue(memoryValue + currentValue);
-        localStorage.setItem('calcMemory', memoryValue + currentValue);
-        toast.info(`Added ${currentValue} to memory`);
+        saveMemoryToDatabase(memoryValue + currentValue);
         break;
       case 'M-':
-        setMemoryValue(memoryValue - currentValue);
-        localStorage.setItem('calcMemory', memoryValue - currentValue);
-        toast.info(`Subtracted ${currentValue} from memory`);
+        saveMemoryToDatabase(memoryValue - currentValue);
         break;
       case 'MR':
         setDisplayValue(String(memoryValue));
@@ -309,9 +392,121 @@ const MainFeature = () => {
         toast.info(`Recalled memory value: ${memoryValue}`);
         break;
       case 'MC':
-        setMemoryValue(0);
-        localStorage.setItem('calcMemory', 0);
-        toast.info('Memory cleared');
+        saveMemoryToDatabase(0);
+        toast.info("Memory cleared");
+        break;
+      default:
+        return;
+    }
+  };
+  
+  // Save memory value to the database
+  const saveMemoryToDatabase = async (value) => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      const success = await saveMemoryValue(user.userId, value);
+      if (success) {
+        setMemoryValue(value);
+        if (value === 0) {
+          toast.info("Memory cleared");
+        } else {
+          toast.info(`Memory updated: ${value}`);
+        }
+      }
+    } catch (error) {
+      console.error("Error saving memory value:", error);
+      toast.error("Failed to update memory");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Save calculator mode to the database
+  const saveCalculatorMode = async (isScientific) => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      await saveCalculatorSettings(user.userId, {
+        scientificMode: isScientific,
+        angleMode: degrees ? 'degrees' : 'radians',
+        darkMode: document.documentElement.classList.contains('dark')
+      });
+    } catch (error) {
+      console.error("Error saving calculator mode:", error);
+      toast.error("Failed to save calculator mode");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Save angle mode to the database
+  const saveAngleMode = async (isDegrees) => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      await saveCalculatorSettings(user.userId, {
+        scientificMode: scientificMode,
+        angleMode: isDegrees ? 'degrees' : 'radians',
+        darkMode: document.documentElement.classList.contains('dark')
+      });
+    } catch (error) {
+      console.error("Error saving angle mode:", error);
+      toast.error("Failed to save angle mode");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Save dark mode to the database
+  const saveDarkMode = async (isDark) => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      await saveCalculatorSettings(user.userId, {
+        scientificMode: scientificMode,
+        angleMode: degrees ? 'degrees' : 'radians',
+        darkMode: isDark
+      });
+    } catch (error) {
+      console.error("Error saving dark mode:", error);
+      toast.error("Failed to save dark mode setting");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Memory functions
+  const handleMemoryOperation = (operation) => {
+    if (!user) {
+      toast.error("Please login to use memory functions");
+      return;
+    }
+    
+    const currentValue = parseFloat(displayValue);
+    
+    switch (operation) {
+      case 'MS':
+        saveMemoryToDatabase(currentValue);
+        break;
+      case 'M+':
+        saveMemoryToDatabase(memoryValue + currentValue);
+        break;
+      case 'M-':
+        saveMemoryToDatabase(memoryValue - currentValue);
+        break;
+      case 'MR':
+        setDisplayValue(String(memoryValue));
+        setWaitingForOperand(true);
+        toast.info(`Recalled memory value: ${memoryValue}`);
+        break;
+      case 'MC':
+        saveMemoryToDatabase(0);
+        toast.info("Memory cleared");
         break;
       default:
         return;
@@ -320,13 +515,31 @@ const MainFeature = () => {
   // Memory functions
 
   const toggleCalculatorMode = () => {
-    setScientificMode(!scientificMode);
-    toast.info(`Switched to ${!scientificMode ? 'scientific' : 'basic'} calculator`);
+    const newMode = !scientificMode;
+    setScientificMode(newMode);
+    saveCalculatorMode(newMode);
+    toast.info(`Switched to ${newMode ? 'scientific' : 'basic'} calculator`);
   };
 
   const toggleAngleMode = () => {
-    setDegrees(!degrees);
-    toast.info(`Switched to ${!degrees ? 'degrees' : 'radians'}`);
+    const newDegrees = !degrees;
+    setDegrees(newDegrees);
+    saveAngleMode(newDegrees);
+    toast.info(`Switched to ${newDegrees ? 'degrees' : 'radians'}`);
+  };
+  
+  const toggleDarkMode = () => {
+    const isDark = document.documentElement.classList.contains('dark');
+    if (isDark) {
+      document.documentElement.classList.remove('dark');
+      saveDarkMode(false);
+      toast.info("Switched to light mode", { icon: "🌞" });
+    } else {
+      document.documentElement.classList.add('dark');
+      saveDarkMode(true);
+      toast.info("Switched to dark mode", { icon: "🌙" });
+    }
+    dispatch(setDarkMode(!isDark));
   };
 
   const toggleShiftMode = () => {
@@ -335,14 +548,38 @@ const MainFeature = () => {
   };
 
   const addToHistory = (calculation, result) => {
+    if (!user) return;
+    
     const newEntry = {
       calculation,
       result: String(result),
       timestamp: new Date().toISOString()
     };
     
-    setHistory(prev => [newEntry, ...prev.slice(0, 9)]); // Keep only 10 most recent entries
+    // Update local state first for immediate feedback
+    setHistory(prev => [newEntry, ...prev.slice(0, 9)]);
+    
+    // Then save to the database
+    saveCalculationToDatabase(calculation, result);
   };
+  
+  // Save calculation to the database
+  const saveCalculationToDatabase = async (calculation, result) => {
+    if (!user) return;
+    
+    try {
+      const savedCalculation = await saveCalculation(user.userId, calculation, result);
+      if (savedCalculation) {
+        // We already updated the local state, so no need to do anything else
+        // This is just to ensure the calculation is saved to the database
+      }
+    } catch (error) {
+      console.error("Error saving calculation to database:", error);
+      // We don't show an error toast here to avoid disrupting the user experience
+      // The calculation is still shown in the local history
+    }
+  };
+  
 
   const toggleHistoryPanel = () => {
     setShowHistory(prev => !prev);
@@ -825,6 +1062,10 @@ const MainFeature = () => {
 
           {/* History Toggle - Mobile Only */}
           <motion.button
+            disabled={historyLoading}
+            className={`mt-6 md:hidden w-full flex items-center justify-center gap-2 text-primary dark:text-primary-light py-3 rounded-xl border border-surface-200 dark:border-surface-700 ${
+              historyLoading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={toggleHistoryPanel}
@@ -884,11 +1125,11 @@ export default MainFeature;
 // History Panel Component - Moved outside MainFeature to be a top-level component
 // Moved outside MainFeature to make it a top-level component
 const HistoryPanel = ({ history, clearHistory, recallFromHistory, TrashIcon, ClockIcon }) => {
-  const formatTime = (isoString) => { 
+  const formatTime = (isoString) => {
     const date = new Date(isoString);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
-
+  
   return (
     <>
       <div className="flex items-center justify-between mb-4">
@@ -915,7 +1156,7 @@ const HistoryPanel = ({ history, clearHistory, recallFromHistory, TrashIcon, Clo
           <div className="history-empty">
             <p>No calculations yet</p>
           </div>
-        ) : (
+        ) : history.map ? (
           history.map((entry, index) => (
             <motion.div
               key={index}
@@ -933,7 +1174,11 @@ const HistoryPanel = ({ history, clearHistory, recallFromHistory, TrashIcon, Clo
               </div>
             </motion.div>
           ))
-        )}
+        ) : (
+          <div className="history-empty">
+            <p>Loading history...</p>
+          </div>
+       )}
       </div>
     </>
   );
