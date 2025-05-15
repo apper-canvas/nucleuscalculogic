@@ -158,10 +158,7 @@ const MainFeature = () => {
           result = Math.log(inputValue);
           calculationDisplay = `ln(${inputValue}) = ${result}`;
           break;
-          break;
-          return;
       }
-    }
       
       setDisplayValue(String(result));
       setWaitingForOperand(true);
@@ -170,6 +167,7 @@ const MainFeature = () => {
       toast.error(`Error: ${error.message}`);
       setDisplayValue('Error');
       setWaitingForOperand(true);
+    }
   };
 
   const handleEquals = () => {
